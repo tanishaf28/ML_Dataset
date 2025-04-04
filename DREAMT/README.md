@@ -1,38 +1,9 @@
 # DREAMT: Dataset for Real-time sleep stage EstimAtion using Multisensor wearable Technology
 
-## Directory Structure
-
 The main components of the project pipeline includes: 
 * Extracting data from the raw data
 * Perform preprocessing and feature enginering on the data
 * Training models for classification
-
-```bash
-.
-├── dataset_sample
-    └── features_df
-        └── SID_domain_features.csv
-    └── E4_aggregate_subsample
-        └── subsampled_SID_whole_df.csv
-    └── participant_info.csv
-├── results
-│   └── quality_score_per_subject.csv
-├── read_raw_e4.py
-├── calculate_quality_score.py
-├── feature_engineering.py
-├── datasets.py
-├── models.py
-├── main.py
-└── utils.py
-
-```
-
-## Setup
-
-1. Clone this repository.
-2. Create a Conda environment from `.yml` file.
-```
-conda env create --file environment.yml
 ```
 
 ## Description
