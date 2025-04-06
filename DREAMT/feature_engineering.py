@@ -1,27 +1,3 @@
-"""
-This module provides a set of helper functions for performing feature engineering using the DREAMT dataset's aggregated E4 dataframes. 
-
-Main Functions:
-- extract_domain_features: Extracts domain features from the E4 dataframes.
-- test_fe_all_subjects: Tests the extract_domain_features function on all participants in the DREAMT dataset.
-
-Usage:
-To use these functions, import this script and call the desired function with the appropriate parameters. 
-
-For example:
-
-from feature_engineering import *
-fg
-fe_df = extract_domain_features(data, features, window_size=10)
-
-# this function computes features for all participants
-test_fe_all_subjects()
-
-
-Author: 
-License: 
-"""
-
 import numpy as np
 import pandas as pd
 import warnings
@@ -147,22 +123,7 @@ HRV_feature_names = [
 
 
 def exclude_signal(segment_df, plot=False, print_scores=False):
-    """Identify is a segment is to be labeled as 'artifact'
-
-    Parameters
-    ----------
-    segment_df: pd.DataFrame 
-        a pandas dataframe of a segment of E4 data from 30 seconds.
-    plot: bool, optional 
-        whether to plot the signal or not. Defaults to False.
-    print_scores: bool, optional
-        whether you which the scores to be printed. Defaults to False.
-
-    Returns
-    -------
-    integer
-        0 = not artifact, 1 = artifact
-    """
+   
 
     bvp = segment_df.BVP.to_numpy()
     bvp = bvp - np.mean(bvp)
@@ -174,10 +135,7 @@ def exclude_signal(segment_df, plot=False, print_scores=False):
     b, a = butter(N=2, Wn=[lowcut / (0.5 * fs), highcut / (0.5 * fs)], btype="band")
     filtered_signal = filtfilt(b, a, bvp)
 
-    # Calculate Signal Power
     signal_power = np.mean(filtered_signal**2)
-
-    # Noise Power estimation (assuming you have a noise segment or method)
     noise = bvp - filtered_signal
     noise_power = np.mean(noise**2)
 
@@ -257,7 +215,6 @@ def exclude_signal(segment_df, plot=False, print_scores=False):
         print("bvp_min = {}".format(np.min(bvp)))
         print("bvp_max = {}".format(np.max(bvp)))
 
-    # rule-based artifact detection: return 1 if the segment is an artifact, 0 otherwise
     if acc_std >= 0.4125 / 2 or snr_db < 10 or np.max(bvp) > 500 or np.min(bvp) < -500:
         return 1
     else:
@@ -265,20 +222,6 @@ def exclude_signal(segment_df, plot=False, print_scores=False):
 
 
 def circadian_cosine(ts, samp_freq=64):
-    """
-    Use the timestamp information to caluclate circadian related features,
-    with a cosine function.
-
-    Parameters
-    ----------
-    ts : numpy.ndarray
-        time series array of timestamps.
-
-    Returns
-    -------
-    numpy.ndarray
-        time series array of circadian information in a cosine function.
-    """
     start_timestamp = ts[0]
     end_timestamp = ts[ts.shape[0] - 1]
     len_vec = (end_timestamp - start_timestamp) * samp_freq
@@ -288,20 +231,6 @@ def circadian_cosine(ts, samp_freq=64):
 
 
 def circadian_decay(ts, samp_freq=64):
-    """
-    Use the timestamp information to caluclate circadian related features,
-    with a decay model, or exponential decay function.
-
-    Parameters
-    ----------
-    ts : numpy.ndarray
-        time series array of timestamps.
-
-    Returns
-    -------
-    numpy.ndarray
-        time series array of circadian information in a decay function.
-    """
     start_timestamp = ts[0]
     end_timestamp = ts[ts.shape[0] - 1]
     len_vec = (end_timestamp - start_timestamp) * samp_freq
@@ -312,20 +241,6 @@ def circadian_decay(ts, samp_freq=64):
 
 
 def circadian_linear(ts, samp_freq=64):
-    """
-    Use the timestamp information to caluclate circadian related features,
-    with a linear function.
-
-    Parameters
-    ----------
-    ts : numpy.ndarray
-        time series array of timestamps.
-
-    Returns
-    -------
-    numpy.ndarray
-        time series array of circadian information in a linear function.
-    """
     start_timestamp = ts[0]
     end_timestamp = ts[ts.shape[0] - 1]
     len_vec = (end_timestamp - start_timestamp) * samp_freq
@@ -335,20 +250,6 @@ def circadian_linear(ts, samp_freq=64):
 
 
 def preprocess_BVP(bvp):
-    """
-    Preprocess a time series of blood volume pulse signal from Empatica E4.
-
-    Parameters
-    ----------
-    bvp : numpy.ndarray
-        time series array of Blood Volume Pulse.
-
-    Returns
-    -------
-    numpy.ndarray
-        time series array of filtered blood volume pulse signal.
-    """
-
     # define low and high frequency cut-off
     low = 0.5
     high = 15
@@ -362,38 +263,12 @@ def preprocess_BVP(bvp):
 
 
 def preprocess_ACC(acc):
-    """
-    Preprocess an array of accelerometry signal coming from Empatica E4.
-
-    Parameters
-    ----------
-    acc : numpy.ndarray
-        time series array of an accel.erometry signal.
-
-    Returns
-    -------
-    numpy.ndarray
-        time series array of the preprocessed accelerometry signal.
-    """
     acc_sos = signal.butter(N=3, Wn=[3, 10], btype="bp", fs=32, output="sos")
     acc_filtered = signal.sosfilt(acc_sos, acc)
     return acc_filtered
 
 
 def preprocess_EDA(eda):
-    """
-    Preprocess an array of electrodermal activity signal coming from Empatica E4.
-
-    Parameters
-    ----------
-    eda : numpy.ndarray
-        time series array of an electrodernal activity signal.
-
-    Returns
-    -------
-    numpy.ndarray
-        time series array of the preprocessed electrodermal activity signal.
-    """
     total_length = eda.shape[0]
     # downsample to reflect actual frequency
     eda = eda[1::16]
@@ -445,22 +320,6 @@ def preprocess_EDA(eda):
 
 
 def clean_IBI(df, freq=64):
-    """
-    Preprocess the Inter-Beat Interval (IBI) signal from Empatica E4.
-
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        E4 dataframe with IBI signal.
-    freq : int, optional
-        Sampling frequency of the IBI signal. Defaults to 64.
-
-    Returns
-    -------
-    pandas.DataFrame
-        E4 dataframe with the preprocessed IBI signal.
-    """
-
     def detect_motion_artifact(df, window_seconds=10, freq=64):
         window = window_seconds * freq
         acc_x = df.ACC_X.to_numpy()
@@ -546,23 +405,6 @@ def clean_IBI(df, freq=64):
 
 
 def preprocess_TIMESTAMPS(ts):
-    """
-    Obtain all three circadian information
-
-    Parameters
-    ----------
-    ts : numpy.ndarray
-        time series array of timestamps.
-
-    Returns
-    -------
-    ts_cos : numpy.ndarray
-        time series array of circadian information in a cosine function.
-    ts_dec : numpy.ndarray
-        time series array of circadian information in a decay function.
-    ts_lin : numpy.ndarray
-        time series array of circadian information in a linear function.
-    """
     ts_cos = circadian_cosine(ts, samp_freq=64)
     ts_dec = circadian_decay(ts, samp_freq=64)
     ts_lin = circadian_linear(ts, samp_freq=64)
@@ -570,20 +412,6 @@ def preprocess_TIMESTAMPS(ts):
 
 
 def preprocess_ALL_SIGNALS(df):
-    """
-    Preprocess all available signals from a dataset from Empatica E4
-
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        pandas dataframe of E4 data.
-
-    Returns
-    -------
-    pandas.DataFrame
-        preprocessed E4 dataframe
-    """
-    # initialize preprocessed_df with all available labels (outcomes)
     if df.shape[0] > 12*3600*64:
         df = df.iloc[:12*3600*64, :]
     preprocessed_df = df.loc[:12*3600*64, ALL_LABELS]
@@ -621,15 +449,6 @@ def acc_trimmed_summary(acc):
     """
     Calculate mean, max, and IQR of the trimmed accelerometer signal
 
-    Parameters
-    ----------
-    acc : numpy.ndarray
-        time series array of an accelerometer signal.
-
-    Returns
-    -------
-    (numpy.float64, numpy.float64, numpy.float64)
-        mean, max, and IQR of the trimmed accelerometer signal
     """
     acc_filtered = acc[(acc > np.quantile(acc, 0.10)) & (acc < np.quantile(acc, 0.90))]
     if acc_filtered.shape[0] == 0:
@@ -649,17 +468,6 @@ def acc_trimmed_summary(acc):
 def MAD_trimmed_summary(acc, segment_seconds=30):
     """
     Calculate mean, max, and IQR of the mean amplitude deviation (MAD) accelerometer signal
-
-    Parameters
-    ----------
-    acc : numpy.ndarray
-        time series array of an accelerometer signal.
-    segment_seconds : int, optional
-        length of the segment in seconds. Defaults to 30.
-
-    Returns
-    -------
-    (numpy.float64, numpy.float64, numpy.float64)
         mean, max, and IQR of the MAD accelerometer signal
     """
 
@@ -685,16 +493,6 @@ def MAD_trimmed_summary(acc, segment_seconds=30):
 def ACC_summary(segment_df):
     """
     compute summary statistics for the accelerometer signal
-
-    Parameters
-    ----------
-    segment_df : pd.DataFrame
-        a pandas dataframe of a segment of E4 data from 30 seconds.
-
-    Returns
-    -------
-    dict
-        a dictionary of accelerometer summary statistics
     """
     acc_x = (segment_df.ACC_X.to_numpy() / 64)[::2]
     acc_x = np.clip(acc_x, np.min(acc_x), np.max(acc_x))
@@ -803,23 +601,6 @@ def ACC_summary(segment_df):
 
 
 def TEMP_summary(segment_df):
-    """
-    Compute summary statistics for the temperature signal
-
-    Parameters
-    ----------
-    segment_df: pd.DataFrame
-        a pandas dataframe of a segment of E4 data from 30 seconds.
-
-    Note
-    ----
-    The temperature signal is expected to be in degrees Celsius. Excludes temperatures lower than 28 and higher than 40
-
-    Returns
-    -------
-    dict
-        a dictionary of temperature summary statistics
-    """
 
     """Preprocesses Temperature data
     
@@ -846,20 +627,6 @@ def TEMP_summary(segment_df):
 
 
 def HRV_summary(segment_df, segment_seconds=30, freq=64):
-    """
-    Compute summary statistics for the Heart Rate Variability (HRV) signal
-
-    Parameters
-    ----------
-    segment_df: pd.DataFrame
-        a pandas dataframe of a segment of E4 data from 30 seconds.
-
-    Returns
-    -------
-    dict
-        a dictionary of HRV summary statistics
-    """
-
     bvp = segment_df.loc[:, "BVP"].to_numpy()
     ibi = segment_df.loc[:, "IBI"].to_numpy()
     HRV_features_dict = {k: np.nan for k in HRV_feature_names}
@@ -932,20 +699,6 @@ def HRV_summary(segment_df, segment_seconds=30, freq=64):
 
 
 def EDA_summary(segment_df):
-    """
-    Compute summary statistics for the Electrodermal Activity (EDA) signal
-
-    Parameters
-    ----------
-    segment_df: pd.DataFrame   
-        a pandas dataframe of a segment of E4 data from 30 seconds.
-
-    Returns
-    -------
-    dict
-        a dictionary of EDA summary statistics
-    """
-
     eda = segment_df.loc[:, "EDA"].to_numpy()
     sampling_rate = 4
     eda_signal = nk.signal_sanitize(eda)
@@ -1012,19 +765,6 @@ def EDA_summary(segment_df):
 
 
 def circadian_features(segment_df):
-    """
-    Compute circadian features from the timestamp information
-    
-    Parameters
-    ----------
-    segment_df: pd.DataFrame
-        a pandas dataframe of a segment of E4 data from 30 seconds.
-
-    Returns
-    -------
-    dict
-        a dictionary of circadian features
-    """
     circadian_features_dict = {
         "timestamp_start": segment_df.loc[0, "TIMESTAMP"],
         "circadian_cosine": segment_df.loc[0, "TIMESTAMP_COSINE"],
@@ -1035,26 +775,7 @@ def circadian_features(segment_df):
 
 
 def aggregate_labels(segment_df, segment_seconds=30):
-    """
-    Aggregate labels for the segment
-
-    Parameters
-    ----------
-    segment_df: pd.DataFrame
-        a pandas dataframe of a segment of E4 data from 30 seconds.
-    segment_seconds: int, optional
-        length of the segment in seconds. Defaults to 30.
-
-    Returns
-    -------
-    dict
-        a dictionary of aggregated labels
-    """
     segment_df.loc[:, ALL_LABELS] = segment_df.loc[:, ALL_LABELS].fillna(0)
-
-    # a one-liner function that takes a NumPy array and returns the value with more than 50% occurrence,
-    # or "Mixed" if no such value exists, using a combination of np.unique and a list comprehension
-
     def most_common_or_mixed(arr):
         unique, counts = np.unique(arr, return_counts=True)
         if any(counts > len(arr) / 2):
@@ -1078,21 +799,6 @@ def aggregate_labels(segment_df, segment_seconds=30):
 
 
 def fe_per_segment(segment_df, segment_seconds=30):
-    """
-    Compute features for a segment of E4 data
-
-    Parameters
-    ----------
-    segment_df: pd.DataFrame
-        a pandas dataframe of a segment of E4 data from 30 seconds.
-    segment_seconds: int, optional 
-        length of the segment in seconds. Defaults to 30.
-
-    Returns
-    -------
-    dict
-        a dictionary of all features    
-    """
     all_features_dict, error_flag = HRV_summary(segment_df)
     all_features_dict.update(ACC_summary(segment_df))
     all_features_dict.update(TEMP_summary(segment_df))
@@ -1107,17 +813,7 @@ def fe_per_segment(segment_df, segment_seconds=30):
 
 def fe_whole_night(df):
     """
-    Compute features for the whole night of E4 data
-
-    Parameters
-    ----------
-    df: pd.DataFrame
-        a pandas dataframe of E4 data for the whole night.
-
-    Returns
-    -------
-    dict
-        a dictionary of all features
+    Compute features for the whole night 
     """
     all_features_dict, _ = HRV_summary(df)
     all_features_dict.update(ACC_summary(df))
@@ -1285,31 +981,16 @@ def fe_whole_night_all_sids(info_dir, data_folder,save_folder_dir):
     fe_df["Arousal Index"] = info_df["Arousal Index"]
 
     # add AHI index
-
     fe_df["Normal"] = (info_df["AHI"] < 5).astype(int)
     fe_df["Mild"] = info_df["AHI"].apply(lambda x: 1 if x >= 5 and x <= 14 else 0)
     fe_df["Moderate"] = info_df["AHI"].apply(lambda x: 1 if x >= 15 and x <= 29 else 0)
     fe_df["Severe"] = info_df["AHI"].apply(lambda x: 1 if x >= 30 else 0)
 
     fe_df.to_csv("{}/all_subjects_fe_df.csv".format(save_folder_dir))
-
     return fe_df
 
 
 def test_domain_feature_engineering(sid):
-    """
-    test the domain feature engineering function
-
-    Parameters
-    ----------
-    sid : str
-        string of the subject id
-
-    Returns
-    -------
-    int
-        0 if the function runs successfully
-    """
     extract_domain_features(
         sid, segment_seconds=30, save_folder_dir="./fe_dataframes_whole_study/"
     )
@@ -1317,23 +998,6 @@ def test_domain_feature_engineering(sid):
 
 
 def test_fe_all_subjects(info_dir, data_folder, save_folder_dir):
-    """
-    Test the feature engineering function for all subjects
-
-    Parameters
-    ----------
-    info_dir : str
-        string of the directory of the participant_info.csv
-    data_folder : str
-        string of the directory of the aggregated E4 datasets
-    save_folder_dir : str
-        string of the directory to save the feature engineering dataframe
-
-    Returns
-    -------
-    list
-        list of subject ids that have an error
-    """
     list_sids = pd.read_csv(info_dir).SID.to_list()
     error_sids = []
     for sid in list_sids:
